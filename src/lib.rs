@@ -3,6 +3,7 @@
 #![deny(missing_docs)]
 #![allow(deprecated)] // TODO: Don't allow this
 
+pub mod binary;
 /// Traits that allow chaining parser outputs together.
 pub mod chain;
 /// Combinators that allow combining and extending existing parsers.
@@ -58,6 +59,8 @@ use std::{
 /// Commonly used functions, traits and types.
 pub mod prelude {
     pub use super::{
+        binary,
+        binary::Endian,
         error::{Error as _, Simple},
         primitive::{
             any, empty, end, filter, filter_map, just, none_of, one_of, seq, take_until, todo,
