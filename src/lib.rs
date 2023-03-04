@@ -507,6 +507,11 @@ pub trait Parser<'a, I: Input<'a>, O, E: ParserExtra<'a, I> = extra::Default> {
         ParseResult::new(out, errs)
     }
 
+    #[doc(hidden)]
+    fn is_start(&self, _: Option<&I::Token>) -> Option<bool> {
+        None
+    }
+
     /// Parse a stream with all the bells & whistles. You can use this to implement your own parser combinators. Note
     /// that both the signature and semantic requirements of this function are very likely to change in later versions.
     /// Where possible, prefer more ergonomic combinators provided elsewhere in the crate rather than implementing your

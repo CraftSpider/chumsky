@@ -493,17 +493,84 @@ impl Seq<char> for String {
 /// A utility trait to abstract over *linear* container-like things.
 ///
 /// This trait is likely to change in future versions of the crate, so avoid implementing it yourself.
-pub trait OrderedSeq<T>: Seq<T> {}
+pub trait OrderedSeq<T>: Seq<T> {
+    /// Get the first item of the sequence
+    fn first(&self) -> Option<T>;
+}
 
-impl<T: Clone> OrderedSeq<T> for T {}
-impl<'b, T: Clone> OrderedSeq<T> for &'b [T] {}
-impl<T: Clone, const N: usize> OrderedSeq<T> for [T; N] {}
-impl<'b, T: Clone, const N: usize> OrderedSeq<T> for &'b [T; N] {}
-impl<'b, T: Clone> OrderedSeq<T> for Vec<T> {}
-impl<T> OrderedSeq<T> for Range<T> where Self: Seq<T> {}
-impl<T> OrderedSeq<T> for core::ops::RangeInclusive<T> where Self: Seq<T> {}
-impl<T> OrderedSeq<T> for RangeFrom<T> where Self: Seq<T> {}
+impl<T: Clone> OrderedSeq<T> for T {
+    fn first(&self) -> Option<T> {
+        Some(self.clone())
+    }
+}
+impl<'b, T: Clone> OrderedSeq<T> for &'b [T] {
+    fn first(&self) -> Option<T> {
+        self.get(0).cloned()
+    }
+}
+impl<T: Clone, const N: usize> OrderedSeq<T> for [T; N] {
+    fn first(&self) -> Option<T> {
+        if N > 0 {
+            Some(unsafe { self.get_unchecked(0) }.clone())
+        } else {
+            None
+        }
+    }
+}
+impl<'b, T: Clone, const N: usize> OrderedSeq<T> for &'b [T; N] {
+    fn first(&self) -> Option<T> {
+        if N > 0 {
+            Some(unsafe { self.get_unchecked(0) }.clone())
+        } else {
+            None
+        }
+    }
+}
+impl<'b, T: Clone> OrderedSeq<T> for Vec<T> {
+    fn first(&self) -> Option<T> {
+        self.get(0).cloned()
+    }
+}
+impl<T> OrderedSeq<T> for Range<T>
+where
+    Self: Seq<T>,
+    T: Clone,
+{
+    fn first(&self) -> Option<T> {
+        Some(self.start.clone())
+    }
+}
+impl<T> OrderedSeq<T> for core::ops::RangeInclusive<T>
+where
+    Self: Seq<T>,
+    T: Clone,
+{
+    fn first(&self) -> Option<T> {
+        Some(self.start().clone())
+    }
+}
+impl<T> OrderedSeq<T> for RangeFrom<T>
+where
+    Self: Seq<T>,
+    T: Clone,
+{
+    fn first(&self) -> Option<T> {
+        Some(self.start.clone())
+    }
+}
 
-impl OrderedSeq<char> for str {}
-impl<'b> OrderedSeq<char> for &'b str {}
-impl OrderedSeq<char> for String {}
+impl OrderedSeq<char> for str {
+    fn first(&self) -> Option<char> {
+        self.chars().next()
+    }
+}
+impl<'b> OrderedSeq<char> for &'b str {
+    fn first(&self) -> Option<char> {
+        self.chars().next()
+    }
+}
+impl OrderedSeq<char> for String {
+    fn first(&self) -> Option<char> {
+        self.chars().next()
+    }
+}

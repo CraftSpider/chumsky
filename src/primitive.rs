@@ -164,6 +164,10 @@ where
     I::Token: Clone + PartialEq,
     T: OrderedSeq<I::Token> + Clone,
 {
+    fn is_start(&self, tok: Option<&I::Token>) -> Option<bool> {
+        self.seq.first().zip(tok).map(|(f, tok)| *tok == f)
+    }
+
     #[inline]
     fn go<M: Mode>(&self, inp: &mut InputRef<'a, '_, I, E>) -> PResult<M, T> {
         Self::go_cfg::<M>(self, inp, JustCfg::default())
@@ -918,19 +922,30 @@ macro_rules! impl_choice_for_tuple {
                 let before = inp.save();
 
                 let Choice { parsers: ($Head, $($X,)*), .. } = self;
+                let first = inp.peek();
+                let first = first.as_ref();
 
-                match $Head.go::<M>(inp) {
-                    Ok(out) => return Ok(out),
-                    Err(()) => inp.rewind(before),
-                }
-
-                $(
-                    match $X.go::<M>(inp) {
+                if let Some(true) | None = $Head.is_start(first) {
+                    match $Head.go::<M>(inp) {
                         Ok(out) => return Ok(out),
                         Err(()) => inp.rewind(before),
                     }
+                }
+
+                $(
+                    if let Some(true) | None = $X.is_start(first) {
+                        match $X.go::<M>(inp) {
+                            Ok(out) => return Ok(out),
+                            Err(()) => inp.rewind(before),
+                        }
+                    }
                 )*
 
+                inp.add_alt(Located::at(
+                    inp.offset().into(),
+                    // SAFETY: Using offsets derived from input
+                    E::Error::expected_found(None, None, unsafe { inp.span_since(before.offset) }),
+                ));
                 Err(())
             }
 
@@ -942,7 +957,7 @@ macro_rules! impl_choice_for_tuple {
         where
             I: Input<'a>,
             E: ParserExtra<'a, I>,
-            $Head:  Parser<'a, I, O, E>,
+            $Head: Parser<'a, I, O, E>,
         {
             #[inline]
             fn go<M: Mode>(&self, inp: &mut InputRef<'a, '_, I, E>) -> PResult<M, O> {
