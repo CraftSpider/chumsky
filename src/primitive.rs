@@ -942,11 +942,13 @@ macro_rules! impl_choice_for_tuple {
                     }
                 )*
 
-                inp.add_alt(Located::at(
-                    inp.offset().into(),
-                    // SAFETY: Using offsets derived from input
-                    E::Error::expected_found(None, None, unsafe { inp.span_since(before.offset) }),
-                ));
+                if let None = inp.errors.alt {
+                    inp.add_alt(Located::at(
+                        inp.offset().into(),
+                        // SAFETY: Using offsets derived from input
+                        E::Error::expected_found(None, None, unsafe { inp.span_since(before.offset) }),
+                    ));
+                }
                 Err(())
             }
 

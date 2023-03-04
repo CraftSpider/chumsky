@@ -277,6 +277,11 @@ where
     F: Fn(OA) -> O,
 {
     #[inline]
+    fn is_start(&self, tok: Option<&I::Token>) -> Option<bool> {
+        self.parser.is_start(tok)
+    }
+
+    #[inline]
     fn go<M: Mode>(&self, inp: &mut InputRef<'a, '_, I, E>) -> PResult<M, O> {
         let out = self.parser.go::<M>(inp)?;
         Ok(M::map(out, &self.mapper))
