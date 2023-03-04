@@ -476,6 +476,11 @@ where
     O: Clone,
 {
     #[inline]
+    fn is_start(&self, tok: Option<&I::Token>) -> Option<bool> {
+        self.parser.is_start(tok)
+    }
+
+    #[inline]
     fn go<M: Mode>(&self, inp: &mut InputRef<'a, '_, I, E>) -> PResult<M, O> {
         let () = self.parser.go::<Check>(inp)?;
         Ok(M::bind(|| self.to.clone()))
@@ -822,6 +827,11 @@ where
     B: Parser<'a, I, OB, E>,
     C: Parser<'a, I, OC, E>,
 {
+    #[inline]
+    fn is_start(&self, tok: Option<&I::Token>) -> Option<bool> {
+        self.start.is_start(tok)
+    }
+
     #[inline]
     fn go<M: Mode>(&self, inp: &mut InputRef<'a, '_, I, E>) -> PResult<M, OA> {
         let _ = self.start.go::<Check>(inp)?;

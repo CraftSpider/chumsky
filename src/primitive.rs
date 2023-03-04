@@ -164,6 +164,7 @@ where
     I::Token: Clone + PartialEq,
     T: OrderedSeq<I::Token> + Clone,
 {
+    #[inline]
     fn is_start(&self, tok: Option<&I::Token>) -> Option<bool> {
         self.seq.first().zip(tok).map(|(f, tok)| *tok == f)
     }

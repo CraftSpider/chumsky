@@ -508,6 +508,7 @@ pub trait Parser<'a, I: Input<'a>, O, E: ParserExtra<'a, I> = extra::Default> {
     }
 
     #[doc(hidden)]
+    #[inline]
     fn is_start(&self, _: Option<&I::Token>) -> Option<bool> {
         None
     }
@@ -2030,6 +2031,11 @@ where
     I: Input<'a>,
     E: ParserExtra<'a, I>,
 {
+    #[inline]
+    fn is_start(&self, tok: Option<&I::Token>) -> Option<bool> {
+        self.inner.is_start(tok)
+    }
+
     fn go<M: Mode>(&self, inp: &mut InputRef<'a, '_, I, E>) -> PResult<M, O> {
         M::invoke(&*self.inner, inp)
     }
