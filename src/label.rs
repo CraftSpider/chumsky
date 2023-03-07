@@ -26,7 +26,7 @@ where
     E::Error: LabelError<'a, I, L>,
 {
     #[inline]
-    fn go<M: Mode>(&self, inp: &mut InputRef<'a, '_, I, E>) -> PResult<M, O> {
+    fn go<M: Mode>(&self, inp: &mut InputRef<'a, '_, I, E>) -> PResult<M, Self::Output> {
         let before = inp.offset();
         let res = self.parser.go::<M>(inp);
 
@@ -41,5 +41,5 @@ where
         res
     }
 
-    go_extra!(O);
+    go_extra!();
 }

@@ -41,7 +41,7 @@ where
         }
     }
 
-    go_extra!(&'a C::Str);
+    go_extra!();
 }
 
 #[cfg(test)]

@@ -137,21 +137,23 @@ pub struct Padded<A> {
     pub(crate) parser: A,
 }
 
-impl<'a, I, O, E, A> Parser<'a, I, O, E> for Padded<A>
+impl<'a, I, E, A> Parser<'a, I, E> for Padded<A>
 where
     I: ValueInput<'a>,
     E: ParserExtra<'a, I>,
     I::Token: Char,
-    A: Parser<'a, I, O, E>,
+    A: Parser<'a, I, E>,
 {
-    fn go<M: Mode>(&self, inp: &mut InputRef<'a, '_, I, E>) -> PResult<M, O> {
+    type Output = A::Output;
+
+    fn go<M: Mode>(&self, inp: &mut InputRef<'a, '_, I, E>) -> PResult<M, Self::Output> {
         inp.skip_while(|c| c.is_whitespace());
         let out = self.parser.go::<M>(inp)?;
         inp.skip_while(|c| c.is_whitespace());
         Ok(out)
     }
 
-    go_extra!(O);
+    go_extra!();
 }
 
 /// A parser that accepts (and ignores) any number of whitespace characters.
@@ -172,7 +174,7 @@ where
 /// assert_eq!(whitespace.parse("").into_result(), Ok(()));
 /// ```
 pub fn whitespace<'a, C: Char, I: ValueInput<'a> + StrInput<'a, C>, E: ParserExtra<'a, I>>(
-) -> Repeated<impl Parser<'a, I, (), E> + Copy + Clone, (), I, E>
+) -> Repeated<impl Parser<'a, I, E, Output = ()> + Copy + Clone, I, E>
 where
     I::Token: Char,
 {
@@ -202,7 +204,7 @@ where
 /// assert!(inline_whitespace.at_least(1).parse("\n\r").has_errors());
 /// ```
 pub fn inline_whitespace<'a, C: Char, I: ValueInput<'a> + StrInput<'a, C>, E: ParserExtra<'a, I>>(
-) -> Repeated<impl Parser<'a, I, (), E> + Copy + Clone, (), I, E>
+) -> Repeated<impl Parser<'a, I, E, Output = ()> + Copy + Clone, I, E>
 where
     I::Token: Char,
 {
@@ -244,7 +246,7 @@ where
 /// ```
 #[must_use]
 pub fn newline<'a, I: ValueInput<'a>, E: ParserExtra<'a, I>>(
-) -> impl Parser<'a, I, (), E> + Copy + Clone
+) -> impl Parser<'a, I, E, Output = ()> + Copy + Clone
 where
     I::Token: Char,
 {
@@ -287,7 +289,7 @@ where
 /// assert!(digits.parse("").has_errors());
 /// ```
 #[must_use]
-pub fn digits<'a, C, I, E>(radix: u32) -> Repeated<impl Parser<'a, I, C, E> + Copy + Clone, C, I, E>
+pub fn digits<'a, C, I, E>(radix: u32) -> Repeated<impl Parser<'a, I, E, Output = C> + Copy + Clone, I, E>
 where
     C: Char,
     I: ValueInput<'a> + Input<'a, Token = C>,
@@ -332,7 +334,7 @@ where
 #[must_use]
 pub fn int<'a, I: ValueInput<'a> + StrInput<'a, C>, C: Char, E: ParserExtra<'a, I>>(
     radix: u32,
-) -> impl Parser<'a, I, &'a C::Str, E> + Copy + Clone {
+) -> impl Parser<'a, I, E, Output = &'a C::Str> + Copy + Clone {
     any()
         .filter(move |c: &C| c.is_digit(radix) && c != &C::digit_zero())
         .map(Some)
@@ -351,7 +353,7 @@ pub fn int<'a, I: ValueInput<'a> + StrInput<'a, C>, C: Char, E: ParserExtra<'a, 
 /// characters or underscores. The regex pattern for it is `[a-zA-Z_][a-zA-Z0-9_]*`.
 #[must_use]
 pub fn ident<'a, I: ValueInput<'a> + StrInput<'a, C>, C: Char, E: ParserExtra<'a, I>>(
-) -> impl Parser<'a, I, &'a C::Str, E> + Copy + Clone {
+) -> impl Parser<'a, I, E, Output = &'a C::Str> + Copy + Clone {
     any()
         .filter(|c: &C| c.to_char().is_ascii_alphabetic() || c.to_char() == '_')
         .then(
@@ -369,9 +371,9 @@ pub fn ident<'a, I: ValueInput<'a> + StrInput<'a, C>, C: Char, E: ParserExtra<'a
 pub fn semantic_indentation<'a, Tok, T, F, E: ParserExtra<'a, &'a str>>(
     token: T,
     make_group: F,
-) -> impl Parser<'a, &'a str, Vec<Tok>, E>
+) -> impl Parser<'a, &'a str, E, Output = Vec<Tok>>
 where
-    T: Parser<'a, &'a str, Tok, E>,
+    T: Parser<'a, &'a str, E, Output = Tok>,
     F: Fn(Vec<Tok>, SimpleSpan<usize>) -> Tok,
 {
     let line_ws = any::<&'a str, E>().filter(|c: &char| c.is_inline_whitespace());
@@ -456,7 +458,7 @@ pub fn keyword<
     E: ParserExtra<'a, I> + 'a,
 >(
     keyword: Str,
-) -> impl Parser<'a, I, &'a C::Str, E> + Clone + 'a
+) -> impl Parser<'a, I, E, Output = &'a C::Str> + Clone + 'a
 where
     C::Str: PartialEq,
 {
