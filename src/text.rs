@@ -154,6 +154,69 @@ where
     go_extra!(O);
 }
 
+type WsInner<'a, I, E> = Repeated<Filter<Any<I, E>, fn(&<I as Input<'a>>::Token) -> bool>, <I as Input<'a>>::Token, I, E>;
+
+/// See [`whitespace`].
+pub struct Whitespace<'a, I: ValueInput<'a>, E: ParserExtra<'a, I>> {
+    inner: WsInner<'a, I, E>,
+}
+
+impl<'a, I, E> Whitespace<'a, I, E>
+where
+    I: ValueInput<'a>,
+    E: ParserExtra<'a, I>,
+{
+    /// TODO
+    #[inline]
+    pub fn at_least(self, n: usize) -> Self {
+        Whitespace { inner: self.inner.at_least(n) }
+    }
+
+    /// TODO
+    #[inline]
+    pub fn at_most(self, n: usize) -> Self {
+        Whitespace { inner: self.inner.at_most(n) }
+    }
+
+    /// TODO
+    #[inline]
+    pub fn exactly(self, n: usize) -> Self {
+        Whitespace { inner: self.inner.exactly(n) }
+    }
+}
+
+impl<'a, I, E> ParserSealed<'a, I, (), E> for Whitespace<'a, I, E>
+where
+    I: ValueInput<'a>,
+    I::Token: Char,
+    E: ParserExtra<'a, I>,
+{
+    fn go<M: Mode>(&self, inp: &mut InputRef<'a, '_, I, E>) -> PResult<M, ()> {
+        self.inner.go::<M>(inp)
+    }
+
+    go_extra!(());
+}
+
+impl<'a, I, E> IterParserSealed<'a, I, I::Token, E> for Whitespace<'a, I, E>
+where
+    I: ValueInput<'a>,
+    I::Token: Char,
+    E: ParserExtra<'a, I>,
+{
+    type IterState<M: Mode> = <WsInner<'a, I, E> as IterParserSealed<'a, I, I::Token, E>>::IterState<M>
+    where
+        I: 'a;
+
+    fn make_iter<M: Mode>(&self, inp: &mut InputRef<'a, '_, I, E>) -> PResult<Emit, Self::IterState<M>> {
+        self.inner.make_iter::<M>(inp)
+    }
+
+    fn next<M: Mode>(&self, inp: &mut InputRef<'a, '_, I, E>, state: &mut Self::IterState<M>) -> IPResult<M, I::Token> {
+        self.inner.next::<M>(inp, state)
+    }
+}
+
 /// A parser that accepts (and ignores) any number of whitespace characters.
 ///
 /// This parser is a `Parser::Repeated` and so methods such as `at_least()` can be called on it.
@@ -171,15 +234,16 @@ where
 /// // ...including none at all!
 /// assert_eq!(whitespace.parse("").into_result(), Ok(()));
 /// ```
-pub fn whitespace<'a, C: Char, I: ValueInput<'a> + StrInput<'a, C>, E: ParserExtra<'a, I>>(
-) -> Repeated<impl Parser<'a, I, (), E> + Copy + Clone, (), I, E>
+pub fn whitespace<'a, C, I, E>(
+) -> Whitespace<'a, I, E>
 where
-    I::Token: Char,
+    C: Char,
+    I: StrInput<'a, C>,
+    E: ParserExtra<'a, I>,
 {
-    any()
-        .filter(|c: &I::Token| c.is_whitespace())
-        .ignored()
-        .repeated()
+    Whitespace {
+        inner: any().filter(C::is_whitespace as fn(&_) -> _).repeated()
+    }
 }
 
 /// A parser that accepts (and ignores) any number of inline whitespace characters.
