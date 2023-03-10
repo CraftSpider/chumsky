@@ -1,3 +1,9 @@
+[workspace]
+members = [
+    ".",
+    "crates/chumsky-debug",
+]
+
 [package]
 name = "chumsky"
 version = "1.0.0-alpha.2"

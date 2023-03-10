@@ -12,6 +12,7 @@
 // TODO: Talk about `.map` and purity assumptions
 
 extern crate alloc;
+extern crate core;
 
 macro_rules! go_extra {
     ( $O :ty ) => {

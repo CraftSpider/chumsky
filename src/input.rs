@@ -569,6 +569,16 @@ pub struct Offset<'a, 'parse, I: Input<'a>> {
     phantom: PhantomData<fn(&'parse ()) -> &'parse ()>, // Invariance
 }
 
+impl<'a, I> fmt::Debug for Offset<'a, '_, I>
+where
+    I: Input<'a>,
+    I::Offset: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.offset.fmt(f)
+    }
+}
+
 impl<'a, 'parse, I: Input<'a>> Copy for Offset<'a, 'parse, I> {}
 impl<'a, 'parse, I: Input<'a>> Clone for Offset<'a, 'parse, I> {
     #[inline(always)]
